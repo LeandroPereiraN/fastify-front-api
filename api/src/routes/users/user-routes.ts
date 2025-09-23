@@ -44,9 +44,15 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             }
         }
     }, async (request, reply) => {
+
         const { nombre, apellido } = request.body;
         if (!nombre || !apellido) {
             return reply.status(400).send({ message: 'Nombre y apellido son requeridos' });
+        }
+
+        const usuarioExistente = usuarios.find(u => u.nombre === nombre && u.apellido === apellido);
+        if (usuarioExistente) {
+            return reply.status(400).send({ message: 'Ya existe un usuario con ese nombre y apellido' });
         }
 
         const newUser: UserResponse = { nombre, apellido };
@@ -58,6 +64,88 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             message: 'Usuario creado exitosamente',
             user: newUser
         });
+    });
+
+    fastify.put('/users', {
+        schema: {
+            description: 'Actualizar un usuario existente',
+            tags: ['usuarios'],
+            querystring: Type.Object({
+                nombreOriginal: Type.String(),
+                apellidoOriginal: Type.String()
+            }),
+            body: Type.Object({
+                nombre: Type.String({ minLength: 1 }),
+                apellido: Type.String({ minLength: 1 })
+            }),
+            response: {
+                200: Type.Object({
+                    message: Type.String(),
+                    user: UserResponseSchema
+                }),
+                400: Type.Object({
+                    message: Type.String()
+                }),
+                404: Type.Object({
+                    message: Type.String()
+                })
+            }
+        }
+    }, async (request, reply) => {
+        const { nombreOriginal, apellidoOriginal } = request.query;
+        const { nombre, apellido } = request.body;
+        
+        if (!nombre || !apellido) {
+            return reply.status(400).send({ message: 'Nombre y apellido son requeridos' });
+        }
+
+        const userUpdate = usuarios.findIndex(u => 
+            u.nombre === nombreOriginal && u.apellido === apellidoOriginal
+        );
+        
+        if (userUpdate === -1) {
+            return reply.status(404).send({ message: 'Usuario no encontrado' });
+        }
+
+        usuarios[userUpdate] = { nombre, apellido };
+        
+        return reply.send({
+            message: 'Usuario actualizado exitosamente',
+            user: usuarios[userUpdate]
+        });
+    });
+
+    fastify.delete('/users', {
+        schema: {
+            description: 'Eliminar un usuario',
+            tags: ['usuarios'],
+            querystring: Type.Object({
+                nombre: Type.String(),
+                apellido: Type.String()
+            }),
+            response: {
+                200: Type.Object({
+                    message: Type.String()
+                }),
+                404: Type.Object({
+                    message: Type.String()
+                })
+            }
+        }
+    }, async (request, reply) => {
+        const { nombre, apellido } = request.query;
+        
+        const userDelete = usuarios.findIndex(u => 
+            u.nombre === nombre && u.apellido === apellido
+        );
+        
+        if (userDelete === -1) {
+            return reply.status(404).send({ message: 'Usuario no encontrado' });
+        }
+
+        usuarios.splice(userDelete, 1);
+        
+        return reply.send({ message: 'Usuario eliminado exitosamente' });
     });
 }
 
