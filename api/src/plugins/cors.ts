@@ -16,6 +16,7 @@ export default fp(async (fastify) => {
         }
 
         cb(new Error("Not allowed"), false);
-    }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 });
 })
