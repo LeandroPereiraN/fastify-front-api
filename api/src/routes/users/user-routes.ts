@@ -2,8 +2,8 @@ import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type, type Static } from '@sinclair/typebox';
 
 const UserResponseSchema = Type.Object({
-  nombre: Type.String(),
-  apellido: Type.String()
+    nombre: Type.String(),
+    apellido: Type.String()
 });
 
 type UserResponse = Static<typeof UserResponseSchema>;
@@ -70,11 +70,9 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         schema: {
             description: 'Actualizar un usuario existente',
             tags: ['usuarios'],
-            querystring: Type.Object({
-                nombreOriginal: Type.String(),
-                apellidoOriginal: Type.String()
-            }),
             body: Type.Object({
+                nombreOriginal: Type.String(),
+                apellidoOriginal: Type.String(),
                 nombre: Type.String({ minLength: 1 }),
                 apellido: Type.String({ minLength: 1 })
             }),
@@ -92,9 +90,8 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             }
         }
     }, async (request, reply) => {
-        const { nombreOriginal, apellidoOriginal } = request.query;
-        const { nombre, apellido } = request.body;
-        
+        const { nombreOriginal,apellidoOriginal,nombre,apellido } = request.body;
+    
         if (!nombre || !apellido) {
             return reply.status(400).send({ message: 'Nombre y apellido son requeridos' });
         }
@@ -102,7 +99,6 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         const userUpdate = usuarios.findIndex(u => 
             u.nombre === nombreOriginal && u.apellido === apellidoOriginal
         );
-        
         if (userUpdate === -1) {
             return reply.status(404).send({ message: 'Usuario no encontrado' });
         }
@@ -119,7 +115,7 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         schema: {
             description: 'Eliminar un usuario',
             tags: ['usuarios'],
-            querystring: Type.Object({
+            body: Type.Object({
                 nombre: Type.String(),
                 apellido: Type.String()
             }),
@@ -133,7 +129,7 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             }
         }
     }, async (request, reply) => {
-        const { nombre, apellido } = request.query;
+        const { nombre, apellido } = request.body;
         
         const userDelete = usuarios.findIndex(u => 
             u.nombre === nombre && u.apellido === apellido
@@ -142,7 +138,6 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         if (userDelete === -1) {
             return reply.status(404).send({ message: 'Usuario no encontrado' });
         }
-
         usuarios.splice(userDelete, 1);
         
         return reply.send({ message: 'Usuario eliminado exitosamente' });
