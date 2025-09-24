@@ -133,7 +133,9 @@ form button:hover {
 }
 
 #formEditar {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   background-color: #fff3cd;
   border: 1px solid #ffeaa7;
   margin-top: 20px;

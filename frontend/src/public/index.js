@@ -1,7 +1,3 @@
-const usersForm = document.getElementById("usersForm")
-const inputName = document.getElementById("nombre")
-const inputLastName = document.getElementById("apellido")
-
 const getUserListHTML = (users) => {
     return `
         <ul id="userList">
@@ -16,171 +12,99 @@ const getUserListHTML = (users) => {
     `;
 }
 
-const getUsers = async () => {
-    const res = await fetch('http://localhost:3000/users')
-    users = await res.json()
-    return users;
-}
-
-const createUser = async (nombre, apellido) => {
-    await fetch('http://localhost:3000/users', {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            nombre: nombre,
-            apellido: apellido
-        })
-    });
-}
-
-const updateUser = async (nombre, apellido) => {
-    await fetch('http://localhost:3000/users', {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            nombre: nombre,
-            apellido: apellido
-        })
-    });
-}
-
-const insertUsersToList = async () => {
-    const userList = document.getElementById('userList')
-    const users = await getUsers();
-
-    userList.innerHTML = users.reduce((html, user) => {
-        return html + `<li>${user.nombre} ${user.apellido}</li>`
-    }, '')
-}
-
 const deleteUser = async (nombre, apellido) => {
-    try {
-        const response = await fetch(`http://localhost:3000/users`, {
-            method: 'DELETE',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                nombre: nombre,
-                apellido: apellido
-            })
-        });
-
-        if (response.ok) {
-            await showUserList();
-            alert('Usuario eliminado exitosamente');
-        } else {
-            const errorData = await response.json();
-            alert('Error al eliminar usuario: ' + errorData.message);
-        }
-    } catch (err) {
-        console.error('Error al eliminar usuario:', err);
+    const success = await userService.deleteUser(nombre, apellido);
+    if (success) {
+        await showUserList();
     }
 }
 
 const showUserList = async () => {
-    try {
-        const users = await getUsers();
-        const content = document.getElementById('content');
-        content.innerHTML = getUserListHTML(users);
+    const users = await userService.getAllUsers();
+    const content = document.getElementById('content');
+    
+    if (users.length === 0) {
+        content.innerHTML = '<p>No hay usuarios registrados</p>';
+        return;
+    }
 
-        // Crea el formulario dentro de content
-        const formEditar = document.createElement("form");
-        formEditar.id = "formEditar";
+    content.innerHTML = getUserListHTML(users);
+
+    createEditForm();
+};
+
+const createEditForm = () => {
+    const content = document.getElementById('content');
+    
+    // Crear formulario de edición
+    const formEditar = document.createElement("form");
+    formEditar.id = "formEditar";
+    formEditar.style.display = "none";
+    formEditar.style.marginTop = "10px";
+
+    const inputEditarNombre = document.createElement("input");
+    inputEditarNombre.id = "inputEditarNombre";
+    inputEditarNombre.placeholder = "Nuevo nombre";
+    inputEditarNombre.required = true;
+
+    const inputEditarApellido = document.createElement("input");
+    inputEditarApellido.id = "inputEditarApellido";
+    inputEditarApellido.placeholder = "Nuevo apellido";
+    inputEditarApellido.required = true;
+
+    const btnGuardarEdicion = document.createElement("button");
+    btnGuardarEdicion.type = "submit";
+    btnGuardarEdicion.textContent = "Guardar";
+
+    const btnCancelarEdicion = document.createElement("button");
+    btnCancelarEdicion.type = "button";
+    btnCancelarEdicion.textContent = "Cancelar";
+    btnCancelarEdicion.onclick = () => {
         formEditar.style.display = "none";
-        formEditar.style.marginTop = "10px";
+        clearEditForm();
+    };
 
-        const inputEditarNombre = document.createElement("input");
-        inputEditarNombre.placeholder = "Nuevo nombre";
+    formEditar.append(inputEditarNombre, inputEditarApellido, btnGuardarEdicion, btnCancelarEdicion);
+    content.appendChild(formEditar);
 
-        const inputEditarApellido = document.createElement("input");
-        inputEditarApellido.placeholder = "Nuevo apellido";
+    let usuarioEditando = null;
 
-        const btnGuardarEdicion = document.createElement("button");
-        btnGuardarEdicion.textContent = "Guardar";
-
-        formEditar.append(inputEditarNombre, inputEditarApellido, btnGuardarEdicion);
-        content.appendChild(formEditar);
-
-        let usuarioEditando = null;
-
-        window.abrirEdicion = async (index) => {
-            const freshUsers = await getUsers();
-            usuarioEditando = freshUsers[index];
+    window.abrirEdicion = async (index) => {
+        usuarioEditando = await userService.getUserByIndex(index);
+        if (usuarioEditando) {
             inputEditarNombre.value = usuarioEditando.nombre;
             inputEditarApellido.value = usuarioEditando.apellido;
             formEditar.style.display = "block";
-        };
+        }
+    };
 
-        // Otro evento - guardar
-        formEditar.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const nuevoNombre = inputEditarNombre.value.trim();
-            const nuevoApellido = inputEditarApellido.value.trim();
+    formEditar.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        if (!usuarioEditando) return;
 
-            if (!nuevoNombre || !nuevoApellido) {
-                alert("Complete ambos campos");
-                return;
-            }
+        const nuevoNombre = inputEditarNombre.value.trim();
+        const nuevoApellido = inputEditarApellido.value.trim();
 
-            // Verificar si no hay cambios
-            if (nuevoNombre === usuarioEditando.nombre && nuevoApellido === usuarioEditando.apellido) {
-                alert("No se han realizado cambios");
-                return;
-            }
+        const success = await userService.updateUser(usuarioEditando, nuevoNombre, nuevoApellido);
+        
+        if (success) {
+            formEditar.style.display = "none";
+            clearEditForm();
+            await showUserList();
+        }
+    });
 
-            try {
-                const allUsers = await getUsers();
-
-                const userExist = allUsers.find(user =>
-                    user.nombre.toLowerCase() === nuevoNombre.toLowerCase() &&
-                    user.apellido.toLowerCase() === nuevoApellido.toLowerCase()
-                );
-
-                if (userExist) {
-                    alert("Ya existe un usuario con ese nombre y apellido.");
-                    return;
-                }
-
-                const response = await fetch('http://localhost:3000/users', {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        nombreOriginal: usuarioEditando.nombre,
-                        apellidoOriginal: usuarioEditando.apellido,
-                        nombre: nuevoNombre,
-                        apellido: nuevoApellido
-                    })
-                });
-
-                if (response.ok) {
-                    alert("Usuario modificado exitosamente");
-                    await showUserList();
-                } else {
-                    const errorData = await response.json();
-                    alert("Error: " + errorData.message);
-                }
-            } catch (error) {
-                console.error("Error al modificar usuario:", error);
-                alert("Error de conexión con el servidor");
-            }
-        });
-
-    } catch (error) {
-        console.error('Error al cargar usuarios:', error);
-        document.getElementById('content').innerHTML = '<p>Error al cargar los usuarios</p>';
+    function clearEditForm() {
+        inputEditarNombre.value = "";
+        inputEditarApellido.value = "";
+        usuarioEditando = null;
     }
 };
 
-// Muestra el formulario para crear un usuario
 const showCreateForm = () => {
     const content = document.getElementById('content');
 
-    // Se inyecta en index.HtML, en div content
     content.innerHTML = `
         <h2>Crear usuario</h2>
         <form id="usersForm">
@@ -202,32 +126,12 @@ const handleCreateUser = async (event) => {
     const nombre = document.getElementById('nombre').value.trim();
     const apellido = document.getElementById('apellido').value.trim();
 
-    if (!nombre || !apellido) {
-        alert('Por favor completa ambos campos');
-        return;
-    }
-
-    try {
-        const response = await fetch('http://localhost:3000/users', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ nombre, apellido })
-        });
-
-        if (response.ok) {
-            // Si esta ok se actualiza la lista
-            alert('Usuario creado exitosamente');
-            await showUserList();
-        } else {
-            // Si no esta ok, muestra el error
-            const errorData = await response.json();
-            alert('Error: ' + errorData.message);
-        }
-    } catch (error) {
-        console.error('Error al crear usuario:', error);
-        alert('Error de conexión con el servidor');
+    const success = await userService.createUser(nombre, apellido);
+    
+    if (success) {
+        document.getElementById('nombre').value = '';
+        document.getElementById('apellido').value = '';
+        await showUserList();
     }
 };
 
