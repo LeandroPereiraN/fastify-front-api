@@ -103,7 +103,20 @@ const showUserList = async () => {
         const btnGuardarEdicion = document.createElement("button");
         btnGuardarEdicion.textContent = "Guardar";
 
-        formEditar.append(inputEditarNombre, inputEditarApellido, btnGuardarEdicion);
+        const btnCancelarEdicion = document.createElement("button");
+        btnCancelarEdicion.textContent = "Cancelar";
+        btnCancelarEdicion.type = "button";
+        btnCancelarEdicion.style.backgroundColor = "#6c757d";
+        btnCancelarEdicion.style.color = "white";
+        btnCancelarEdicion.style.border = "1px solid #6c757d";
+
+        const buttonContainer = document.createElement("div");
+        buttonContainer.style.display = "flex";
+        buttonContainer.style.gap = "10px";
+        buttonContainer.style.marginTop = "10px";
+        buttonContainer.append(btnGuardarEdicion, btnCancelarEdicion);
+
+        formEditar.append(inputEditarNombre, inputEditarApellido, buttonContainer);
         content.appendChild(formEditar);
 
         let usuarioEditando = null;
@@ -115,6 +128,13 @@ const showUserList = async () => {
             inputEditarApellido.value = usuarioEditando.apellido;
             formEditar.style.display = "block";
         };
+
+        btnCancelarEdicion.addEventListener("click", () => {
+            formEditar.style.display = "none";
+            usuarioEditando = null;
+            inputEditarNombre.value = "";
+            inputEditarApellido.value = "";
+        });
 
         // Otro evento - guardar
         formEditar.addEventListener("submit", async (e) => {
@@ -188,12 +208,20 @@ const showCreateForm = () => {
             <input id="nombre" type="text" name="nombre" required><br>
             <label for="apellido">Apellido:</label>
             <input id="apellido" type="text" name="apellido" required><br>
-            <button type="submit">Crear</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="submit">Crear</button>
+                <button type="button" id="cancelBtn" style="background-color: #6c757d; color: white; border: 1px solid #6c757d;">Cancelar</button>
+            </div>
         </form>
     `;
 
     const form = document.getElementById('usersForm');
     form.addEventListener('submit', handleCreateUser);
+
+    const cancelBtn = document.getElementById('cancelBtn');
+    cancelBtn.addEventListener('click', () => {
+        showUserList();
+    });
 };
 
 const handleCreateUser = async (event) => {
