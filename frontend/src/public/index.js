@@ -2,22 +2,6 @@ const usersForm = document.getElementById("usersForm")
 const inputName = document.getElementById("nombre")
 const inputLastName = document.getElementById("apellido")
 
-/*
-
-const createUser = async () => {
-    await fetch("http://localhost:3000/users", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            nombre: inputName.value,
-            apellido: inputLastName.value
-        })
-    });
-}
-*/
-
 const getUserListHTML = (users) => {
     return `
         <ul id="userList">
@@ -73,14 +57,6 @@ const insertUsersToList = async () => {
     }, '')
 }
 
-/*
-usersForm.addEventListener("submit", async (e) => {
-    e.preventDefault()
-    createUser();
-    insertUsersToList()
-})
-*/
-
 const deleteUser = async (nombre, apellido) => {
     try {
         const response = await fetch(`http://localhost:3000/users`, {
@@ -93,9 +69,10 @@ const deleteUser = async (nombre, apellido) => {
                 apellido: apellido
             })
         });
-        
+
         if (response.ok) {
-            showUserList();
+            await showUserList();
+            alert('Usuario eliminado exitosamente');
         } else {
             const errorData = await response.json();
             alert('Error al eliminar usuario: ' + errorData.message);
@@ -105,25 +82,13 @@ const deleteUser = async (nombre, apellido) => {
     }
 }
 
-/*const showUserList = async () => {
-    try {
-        const users = await getUsers();
-        const content = document.getElementById('content');
-        content.innerHTML = getUserListHTML(users);
-
-    } catch (error) {
-        console.error('Error al cargar usuarios:', error);
-        document.getElementById('content').innerHTML = '<p>Error al cargar los usuarios</p>';
-    }
-}*/
-
 const showUserList = async () => {
     try {
         const users = await getUsers();
         const content = document.getElementById('content');
         content.innerHTML = getUserListHTML(users);
 
-        // Crea el formulario dentro de content, ver con el equipo luego si lo dejamos asi
+        // Crea el formulario dentro de content
         const formEditar = document.createElement("form");
         formEditar.id = "formEditar";
         formEditar.style.display = "none";
@@ -162,7 +127,25 @@ const showUserList = async () => {
                 return;
             }
 
+            // Verificar si no hay cambios
+            if (nuevoNombre === usuarioEditando.nombre && nuevoApellido === usuarioEditando.apellido) {
+                alert("No se han realizado cambios");
+                return;
+            }
+
             try {
+                const allUsers = await getUsers();
+
+                const userExist = allUsers.find(user =>
+                    user.nombre.toLowerCase() === nuevoNombre.toLowerCase() &&
+                    user.apellido.toLowerCase() === nuevoApellido.toLowerCase()
+                );
+
+                if (userExist) {
+                    alert("Ya existe un usuario con ese nombre y apellido.");
+                    return;
+                }
+
                 const response = await fetch('http://localhost:3000/users', {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -176,7 +159,7 @@ const showUserList = async () => {
 
                 if (response.ok) {
                     alert("Usuario modificado exitosamente");
-                    showUserList(); 
+                    await showUserList();
                 } else {
                     const errorData = await response.json();
                     alert("Error: " + errorData.message);
@@ -236,7 +219,7 @@ const handleCreateUser = async (event) => {
         if (response.ok) {
             // Si esta ok se actualiza la lista
             alert('Usuario creado exitosamente');
-            showUserList();
+            await showUserList();
         } else {
             // Si no esta ok, muestra el error
             const errorData = await response.json();
@@ -247,3 +230,7 @@ const handleCreateUser = async (event) => {
         alert('Error de conexión con el servidor');
     }
 };
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await showUserList();
+});
