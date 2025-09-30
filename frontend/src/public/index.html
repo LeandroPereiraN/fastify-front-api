@@ -9,9 +9,10 @@
 </head>
 
 <body>
-    <nav class="menu">
+    <nav class="menu" id="menu">
         <button onclick="showUserList()">Listar usuarios</button>
         <button onclick="showCreateForm()">Crear usuario</button>
+        <button onclick="showLoginForm()">Iniciar sesion</button>
     </nav>
 
     <div id="content">
@@ -22,7 +23,8 @@
     <script src="services/errorHandler.js"></script>
     <script src="services/api.js"></script>
     <script src="services/user.js"></script>
-    
+    <script src="services/auth.js"></script>
+
     <!-- Controlador UI -->
     <script src="index.js"></script>
 </body>

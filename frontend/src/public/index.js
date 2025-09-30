@@ -113,7 +113,7 @@ const showCreateForm = () => {
             <label for="apellido">Apellido:</label>
             <input id="apellido" type="text" name="apellido" required><br>
             <label for="password">Contraseña:</label>
-            <input id="password" type="text" name="password" required><br>
+            <input id="password" type="password" name="password" required><br>
             <button type="submit">Crear</button>
         </form>
     `;
@@ -139,6 +139,62 @@ const handleCreateUser = async (event) => {
     }
 };
 
+const showLoginForm = () => {
+    const content = document.getElementById('content');
+
+    content.innerHTML = `
+        <h2>Iniciar sesión</h2>
+        <form id="loginForm">
+            <label for="nombre">Nombre:</label>
+            <input id="nombre" type="text" name="nombre" required><br>
+            <label for="apellido">Apellido:</label>
+            <input id="apellido" type="text" name="apellido" required><br>
+            <label for="password">Contraseña:</label>
+            <input id="password" type="password" name="password" required><br>
+            <button type="submit">Iniciar sesión</button>
+        </form>
+    `;
+
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', handleLoginUser);
+};
+
+const handleLoginUser = async (event) => {
+    event.preventDefault();
+
+    const nombre = document.getElementById('nombre').value.trim();
+    const apellido = document.getElementById('apellido').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    const success = await authService.loginUser(nombre, apellido, password);
+
+    if (success) {
+        document.getElementById('nombre').value = '';
+        document.getElementById('apellido').value = '';
+        document.getElementById('password').value = '';
+        await showUserList();
+        await showMenuOptions();
+    }
+};
+
+const showMenuOptions = async () => {
+    const menu = document.getElementById('menu');
+
+    const isUserLogged = localStorage.getItem('token')
+    menu.innerHTML = `
+        <button onclick="showUserList()">Listar usuarios</button>
+        <button onclick="showCreateForm()">Crear usuario</button>
+        ${isUserLogged ? '<button onclick="logout()">Cerrar sesion</button>' : '<button onclick="showLoginForm()">Iniciar sesion</button>'}
+    `;
+}
+
+const logout = async () => {
+    await authService.logoutUser();
+    await showMenuOptions();
+    await showUserList();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     await showUserList();
+    await showMenuOptions();
 });
