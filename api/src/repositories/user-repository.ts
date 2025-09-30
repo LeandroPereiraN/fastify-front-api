@@ -31,7 +31,10 @@ class UserRepository {
   }
 
   static createUser = async (newUser: UserType & { password: string }) => {
-    users.push(newUser);
+    const { password } = newUser
+    const encryptedPassword = await bcrypt.hash(password, 10)
+
+    users.push({ ...newUser, password: encryptedPassword });
   }
 
   static updateUser = async (user: UserType, newUser: Omit<UserType, 'isAdmin'>) => {

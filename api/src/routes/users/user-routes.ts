@@ -146,8 +146,19 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
                 404: Type.Object({
                     message: Type.String()
                 })
+            },
+            security: [
+                { bearerAuth: [] }
+            ]
+        },
+        onRequest: async (req, res) => {
+            fastify.authenticate(req, res);
+
+            const user = req.user as UserType;
+            if (!user || !user.isAdmin) {
+                throw new PermissionError('No tienes permisos para realizar esta acción.');
             }
-        }
+        },
     }, async (request, reply) => {
         const { nombre, apellido } = request.body;
 
