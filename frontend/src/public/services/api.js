@@ -5,15 +5,20 @@ class ApiService {
 
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
-        
+
+        const token = localStorage.getItem("token");
+
         const config = {
-            method: 'GET',
-            ...options
+            ...options,
+            headers: {
+                ...(options.headers || {}),
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
         };
 
         try {
             const response = await fetch(url, config);
-            
+
             if (!response.ok) {
                 await errorHandler.handleHttpError(response);
                 return null;

@@ -22,9 +22,8 @@ class AuthService {
                 password: password.trim()
             });
 
-            localStorage.setItem('token', result.token)
-
             if (result !== null) {
+                localStorage.setItem('token', result.token)
                 errorHandler.showSuccess('Sesión iniciada correctamente');
                 return true;
             }

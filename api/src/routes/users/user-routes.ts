@@ -1,7 +1,8 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';
-import { User } from '../../types/User.ts';
+import { User, type UserType } from '../../types/User.ts';
 import UserRepository from '../../repositories/user-repository.ts';
+import { PermissionError } from '../../models/errors.ts';
 
 const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
     fastify.get('/users', {
@@ -34,6 +35,17 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
                 400: Type.Object({
                     message: Type.String()
                 })
+            },
+            security: [
+                { bearerAuth: [] }
+            ]
+        },
+        onRequest: async (req, res) => {
+            fastify.authenticate(req, res);
+
+            const user = req.user as UserType;
+            if (!user || !user.isAdmin) {
+                throw new PermissionError('No tienes permisos para realizar esta acción.');
             }
         }
     }, async (request, reply) => {
@@ -78,6 +90,17 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
                 404: Type.Object({
                     message: Type.String()
                 })
+            },
+            security: [
+                { bearerAuth: [] }
+            ]
+        },
+        onRequest: async (req, res) => {
+            fastify.authenticate(req, res);
+
+            const user = req.user as UserType;
+            if (!user || !user.isAdmin) {
+                throw new PermissionError('No tienes permisos para realizar esta acción.');
             }
         }
     }, async (request, reply) => {

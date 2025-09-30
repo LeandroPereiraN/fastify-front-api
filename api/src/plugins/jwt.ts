@@ -2,7 +2,6 @@ import fastifyPlugin from 'fastify-plugin'
 import jwt from '@fastify/jwt'
 import type { UserType } from '../types/User.ts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { AuthorizedError } from '../models/errors.ts'
 
 export default fastifyPlugin(async (fastify, opts) => {
   fastify.register(jwt, {
@@ -13,7 +12,10 @@ export default fastifyPlugin(async (fastify, opts) => {
     try {
       await req.jwtVerify();
     } catch (err) {
-      throw new AuthorizedError();
+      return res.status(401).send({
+        code: "NO_AUTORIZADO",
+        message: "No está autorizado"
+      });
     }
   })
 })
