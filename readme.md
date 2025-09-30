@@ -20,7 +20,7 @@
 2. Luego, inicia el frontend:
    - Accede a la carpeta `frontend`.
    - Ejecuta **npm run dev**.
-   - El frontend se levantará en el puerto [http://localhost:4000/docs](http://localhost:4000) por defecto.
+   - El frontend se levantará en el puerto [http://localhost:4000](http://localhost:4000) por defecto.
 
 ## Documentación de la API
 Puedes acceder a la documentación de la API en la ruta [http://localhost:3000/docs](http://localhost:3000/docs) una vez que el backend esté corriendo.
