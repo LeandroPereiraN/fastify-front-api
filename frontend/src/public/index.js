@@ -22,7 +22,7 @@ const deleteUser = async (nombre, apellido) => {
 const showUserList = async () => {
     const users = await userService.getAllUsers();
     const content = document.getElementById('content');
-    
+
     if (users.length === 0) {
         content.innerHTML = '<p>No hay usuarios registrados</p>';
         return;
@@ -35,7 +35,7 @@ const showUserList = async () => {
 
 const createEditForm = () => {
     const content = document.getElementById('content');
-    
+
     // Crear formulario de edición
     const formEditar = document.createElement("form");
     formEditar.id = "formEditar";
@@ -80,14 +80,14 @@ const createEditForm = () => {
 
     formEditar.addEventListener("submit", async (e) => {
         e.preventDefault();
-        
+
         if (!usuarioEditando) return;
 
         const nuevoNombre = inputEditarNombre.value.trim();
         const nuevoApellido = inputEditarApellido.value.trim();
 
         const success = await userService.updateUser(usuarioEditando, nuevoNombre, nuevoApellido);
-        
+
         if (success) {
             formEditar.style.display = "none";
             clearEditForm();
@@ -112,6 +112,8 @@ const showCreateForm = () => {
             <input id="nombre" type="text" name="nombre" required><br>
             <label for="apellido">Apellido:</label>
             <input id="apellido" type="text" name="apellido" required><br>
+            <label for="password">Contraseña:</label>
+            <input id="password" type="text" name="password" required><br>
             <button type="submit">Crear</button>
         </form>
     `;
@@ -125,12 +127,14 @@ const handleCreateUser = async (event) => {
 
     const nombre = document.getElementById('nombre').value.trim();
     const apellido = document.getElementById('apellido').value.trim();
+    const password = document.getElementById('password').value.trim();
 
-    const success = await userService.createUser(nombre, apellido);
-    
+    const success = await userService.createUser(nombre, apellido, password);
+
     if (success) {
         document.getElementById('nombre').value = '';
         document.getElementById('apellido').value = '';
+        document.getElementById('password').value = '';
         await showUserList();
     }
 };

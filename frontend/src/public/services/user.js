@@ -13,15 +13,15 @@ class UserService {
         }
     }
 
-    async createUser(nombre, apellido) {
-        if (!this.validateUserData(nombre, apellido)) {
+    async createUser(nombre, apellido, password) {
+        if (!this.validateUserData(nombre, apellido, password)) {
             return false;
         }
 
         try {
             const existingUsers = await this.getAllUsers();
-            const userExists = existingUsers.some(user => 
-                user.nombre.toLowerCase() === nombre.toLowerCase() && 
+            const userExists = existingUsers.some(user =>
+                user.nombre.toLowerCase() === nombre.toLowerCase() &&
                 user.apellido.toLowerCase() === apellido.toLowerCase()
             );
 
@@ -32,7 +32,8 @@ class UserService {
 
             const result = await apiService.post(this.endpoint, {
                 nombre: nombre.trim(),
-                apellido: apellido.trim()
+                apellido: apellido.trim(),
+                password: password.trim()
             });
 
             if (result !== null) {
@@ -47,19 +48,14 @@ class UserService {
     }
 
     async updateUser(originalUser, newNombre, newApellido) {
-        if (!this.validateUserData(newNombre, newApellido)) {
-            return false;
-        }
-
-        if (originalUser.nombre === newNombre && originalUser.apellido === newApellido) {
-            errorHandler.showInfo('No se han realizado cambios');
+        if (!this.validateUserDataToEdit(originalUser, newNombre, newApellido)) {
             return false;
         }
 
         try {
             const existingUsers = await this.getAllUsers();
-            const userExists = existingUsers.some(user => 
-                user.nombre.toLowerCase() === newNombre.toLowerCase() && 
+            const userExists = existingUsers.some(user =>
+                user.nombre.toLowerCase() === newNombre.toLowerCase() &&
                 user.apellido.toLowerCase() === newApellido.toLowerCase() &&
                 !(user.nombre === originalUser.nombre && user.apellido === originalUser.apellido)
             );
@@ -113,8 +109,8 @@ class UserService {
     async findUser(nombre, apellido) {
         try {
             const users = await this.getAllUsers();
-            return users.find(user => 
-                user.nombre.toLowerCase() === nombre.toLowerCase() && 
+            return users.find(user =>
+                user.nombre.toLowerCase() === nombre.toLowerCase() &&
                 user.apellido.toLowerCase() === apellido.toLowerCase()
             ) || null;
         } catch (error) {
@@ -133,14 +129,42 @@ class UserService {
         }
     }
 
-    validateUserData(nombre, apellido) {
+    validateUserData(nombre, apellido, password) {
         if (!nombre || !apellido) {
             errorHandler.showError('Nombre y apellido son requeridos');
             return false;
         }
 
+        if (!password) {
+            errorHandler.showError('La contraseña es requerida');
+        }
+
         if (nombre.trim().length < 2 || apellido.trim().length < 2) {
             errorHandler.showError('Nombre y apellido deben tener al menos 2 caracteres');
+            return false;
+        }
+
+        if (password.trim().length < 8) {
+            errorHandler.showError('La contraseña debe tener al menos 8 caracteres');
+            return false;
+        }
+
+        return true;
+    }
+
+    validateUserDataToEdit(originalUser, newNombre, newApellido) {
+        if (!newNombre || !newApellido) {
+            errorHandler.showError('Nombre y apellido son requeridos');
+            return false;
+        }
+
+        if (newNombre.trim().length < 2 || newApellido.trim().length < 2) {
+            errorHandler.showError('Nombre y apellido deben tener al menos 2 caracteres');
+            return false;
+        }
+
+        if (originalUser.nombre === newNombre && originalUser.apellido === newApellido) {
+            errorHandler.showInfo('No se han realizado cambios');
             return false;
         }
 

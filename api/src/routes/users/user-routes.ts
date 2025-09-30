@@ -1,16 +1,7 @@
 import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { Type, type Static } from '@sinclair/typebox';
-
-const UserResponseSchema = Type.Object({
-    nombre: Type.String(),
-    apellido: Type.String()
-});
-
-type UserResponse = Static<typeof UserResponseSchema>;
-const usuarios: UserResponse[] = [
-    { nombre: "Pepe", apellido: "Sanchez" },
-    { nombre: "Juan", apellido: "Perez" }
-];
+import { Type } from '@sinclair/typebox';
+import { User } from '../../types/User.ts';
+import UserRepository from '../../repositories/user-repository.ts';
 
 const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
     fastify.get('/users', {
@@ -18,11 +9,11 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             description: 'Obtener todos los usuarios',
             tags: ['usuarios'],
             response: {
-                200: Type.Array(UserResponseSchema)
+                200: Type.Array(User)
             }
         }
     }, async (request, reply) => {
-        return usuarios;
+        return await UserRepository.getUsers();
     });
 
     fastify.post('/users', {
@@ -31,12 +22,14 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             tags: ['usuarios'],
             body: Type.Object({
                 nombre: Type.String({ minLength: 1, description: 'Nombre del usuario' }),
-                apellido: Type.String({ minLength: 1, description: 'Apellido del usuario' })
+                apellido: Type.String({ minLength: 1, description: 'Apellido del usuario' }),
+                isAdmin: Type.Boolean({ description: 'El usuario es administrador', default: false }),
+                password: Type.String({ description: 'Contraseña del usuario' })
             }),
             response: {
                 201: Type.Object({
                     message: Type.String(),
-                    user: UserResponseSchema
+                    user: User
                 }),
                 400: Type.Object({
                     message: Type.String()
@@ -44,22 +37,20 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             }
         }
     }, async (request, reply) => {
-
-        const { nombre, apellido } = request.body;
-        if (!nombre || !apellido) {
-            return reply.status(400).send({ message: 'Nombre y apellido son requeridos' });
+        const { nombre, apellido, isAdmin, password } = request.body;
+        if (!nombre || !apellido || !password) {
+            return reply.status(400).send({ message: 'Nombre, apellido y contraseña son requeridos' });
         }
 
-        const usuarioExistente = usuarios.find(u => u.nombre === nombre && u.apellido === apellido);
-        if (usuarioExistente) {
+        const userExist = await UserRepository.getUserByCompleteName(nombre, apellido);
+        if (userExist) {
             return reply.status(400).send({ message: 'Ya existe un usuario con ese nombre y apellido' });
         }
 
-        const newUser: UserResponse = { nombre, apellido };
-        usuarios.push(newUser);
-        
+        const newUser = { nombre, apellido, isAdmin: !!isAdmin, password };
+        UserRepository.createUser(newUser);
         console.log('Usuario creado:', request.body);
-        
+
         return reply.status(201).send({
             message: 'Usuario creado exitosamente',
             user: newUser
@@ -79,7 +70,7 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             response: {
                 200: Type.Object({
                     message: Type.String(),
-                    user: UserResponseSchema
+                    user: User
                 }),
                 400: Type.Object({
                     message: Type.String()
@@ -90,24 +81,27 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
             }
         }
     }, async (request, reply) => {
-        const { nombreOriginal,apellidoOriginal,nombre,apellido } = request.body;
-    
+        const { nombreOriginal, apellidoOriginal, nombre, apellido } = request.body;
+
         if (!nombre || !apellido) {
             return reply.status(400).send({ message: 'Nombre y apellido son requeridos' });
         }
 
-        const userUpdate = usuarios.findIndex(u => 
-            u.nombre === nombreOriginal && u.apellido === apellidoOriginal
-        );
-        if (userUpdate === -1) {
+        if (!nombreOriginal || !apellidoOriginal) {
+            return reply.status(400).send({ message: 'Nombre original y apellido original son requeridos' });
+        }
+
+        const user = await UserRepository.getUserByCompleteName(nombreOriginal, apellidoOriginal);
+        if (!user) {
             return reply.status(404).send({ message: 'Usuario no encontrado' });
         }
 
-        usuarios[userUpdate] = { nombre, apellido };
-        
+        const newUser = { nombre, apellido }
+        const updatedUser = await UserRepository.updateUser(user, newUser);
+
         return reply.send({
             message: 'Usuario actualizado exitosamente',
-            user: usuarios[userUpdate]
+            user: updatedUser
         });
     });
 
@@ -123,6 +117,9 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
                 200: Type.Object({
                     message: Type.String()
                 }),
+                400: Type.Object({
+                    message: Type.String()
+                }),
                 404: Type.Object({
                     message: Type.String()
                 })
@@ -130,16 +127,16 @@ const userRoutes: FastifyPluginAsyncTypebox = async (fastify) => {
         }
     }, async (request, reply) => {
         const { nombre, apellido } = request.body;
-        
-        const userDelete = usuarios.findIndex(u => 
-            u.nombre === nombre && u.apellido === apellido
-        );
-        
-        if (userDelete === -1) {
+
+        if (!nombre || !apellido) {
+            return reply.status(400).send({ message: 'Nombre y apellido son requeridos' });
+        }
+
+        const isDeleted = await UserRepository.deleteUser(nombre, apellido);
+        if (!isDeleted) {
             return reply.status(404).send({ message: 'Usuario no encontrado' });
         }
-        usuarios.splice(userDelete, 1);
-        
+
         return reply.send({ message: 'Usuario eliminado exitosamente' });
     });
 }
