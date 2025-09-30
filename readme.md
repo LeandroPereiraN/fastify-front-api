@@ -15,7 +15,7 @@
 1. Primero, inicia el backend:
    - Accede a la carpeta `api`.
    - Ejecuta **npm run dev**.
-   - El backend se levantará en [http://localhost:3000/docs](http://localhost:3000/docs) por defecto.
+   - El backend se levantará en [http://localhost:3000](http://localhost:3000) por defecto.
 
 2. Luego, inicia el frontend:
    - Accede a la carpeta `frontend`.
